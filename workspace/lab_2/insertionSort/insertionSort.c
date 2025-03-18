@@ -89,7 +89,7 @@ double run(int size, int repetitions)
 void run_experiments(configuration config)
 {
     // Scrivo su file i risultati
-    FILE *fd = fopen("result.csv", "w");
+    FILE *fd = fopen("insertionSortResult.csv", "w");
     fprintf(fd, "size,elapsed_time\n");
 
     // itera da min_size a max_size con passo step
