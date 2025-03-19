@@ -98,17 +98,14 @@ void hybridMergeSort(int arr[], int start, int end)
     // Se l'array contiene almeno due elementi
     if (end - start > HYBRID_MS_K)
     {
-        if (start < end)
-        {
-            int mid = start + (end - start) / 2;
-            // richiama ricorsivamente sulle due metà dell'array
-            hybridMergeSort(arr, start, mid);
-            hybridMergeSort(arr, mid + 1, end);
+        int mid = start + (end - start) / 2;
+        // richiama ricorsivamente sulle due metà dell'array
+        hybridMergeSort(arr, start, mid);
+        hybridMergeSort(arr, mid + 1, end);
 
-            // dopo la chiamata, le due metà sono ordinate e
-            // possono essere unite con una procedura "merge"
-            merge(arr, start, mid, end);
-        }
+        // dopo la chiamata, le due metà sono ordinate e
+        // possono essere unite con una procedura "merge"
+        merge(arr, start, mid, end);
     }
     else
     {
