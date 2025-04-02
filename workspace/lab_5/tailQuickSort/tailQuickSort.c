@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define HYBRID_QS_K 55
+
 // struct configurazione: max_size, min_size, step, repetitions, seed
 typedef struct
 {
@@ -20,9 +22,28 @@ void swap(int *arr, int i, int j)
 }
 
 /**
- * Sottoprocedura base di quicksort
+ * Ordina il mio array
  */
-int partition(int arr[], int start, int end)
+void insertionSort(int arr[], int size)
+{
+    for (int j = 1; j < size; j++)
+    {
+        int key = arr[j];
+        int k = j - 1;
+
+        while ((k >= 0) && (arr[k] > key))
+        {
+            arr[k + 1] = arr[k];
+            k -= 1;
+        }
+        arr[k + 1] = key;
+    }
+}
+
+/**
+ * Sottoprocedura principale di `quick_sort`.
+ */
+int partition(int *arr, int start, int end)
 {
     int pivot = arr[end];
     int i = start - 1;
@@ -39,16 +60,73 @@ int partition(int arr[], int start, int end)
     return i;
 }
 
+int medianOfThree(int *arr, int a, int b, int c)
+{
+    if (arr[a] > arr[b])
+    {
+        if (arr[b] > arr[c])
+            return b;
+        else if (arr[a] < arr[c])
+            return a;
+        else
+            return c;
+    }
+    else
+    {
+        if (arr[a] > arr[c])
+            return a;
+        else if (arr[b] < arr[c])
+            return b;
+        else
+            return c;
+    }
+}
+
+int motPartition(int *arr, int start, int end)
+{
+    // Cerca l'elemento mediano tra start, end e il loro centro (mid)
+    int median = medianOfThree(
+        arr, start, end, start + (end - start) / 2);
+
+    // Scambia end con mid
+    swap(arr, median, end);
+
+    // Ritorna con partition
+    return partition(arr, start, end);
+}
+
 /**
  * Algoritmo di ordinamento quicSort
  */
-void quickSort(int arr[], int start, int end)
+void tailQuickSort(int arr[], int start, int end)
 {
-    if (start < end)
+    if (end - start <= HYBRID_QS_K)
     {
-        int q = partition(arr, start, end);
-        quickSort(arr, start, q - 1);
-        quickSort(arr, q + 1, end);
+        insertionSort(arr, end + 1);
+        return;
+    }
+
+    // fintanto che start è minore di end
+    while (start < end)
+    {
+        // ottieni il pivot con partition tra start ed end
+        int q = motPartition(arr, start, end);
+
+        // se la parte dell'array a sinistra del pivot è più lunga della parte destra
+        if ((q - start) > (end - q))
+        {
+            // ordina la parte dell'array a sinistra del pivot
+            tailQuickSort(arr, start, q - 1);
+            // start diventa la posizione subito successiva al pivot
+            start = q + 1;
+        }
+        else
+        {
+            // Ordina la parte dell'array a destra del pivot
+            tailQuickSort(arr, q + 1, end);
+            // end diventa la posizione subito precedente al pivot
+            end = q - 1;
+        }
     }
 }
 
@@ -89,7 +167,7 @@ double run(int size, int repetitions)
 
         // esegui l'algoritmo di ordinamento su arr e misura il tempo di esecuzione, accumulandolo in una variabile
         clock_t start = clock();
-        quickSort(arr, 0, size - 1);
+        tailQuickSort(arr, 0, size - 1);
         clock_t stop = clock();
 
         // Controllo se l'array è realmente ordinato
@@ -110,7 +188,7 @@ double run(int size, int repetitions)
 void run_experiments(configuration config)
 {
     // Scrivo su file i risultati
-    FILE *fd = fopen("quickSortResult.csv", "w");
+    FILE *fd = fopen("tailQuickSortResult.csv", "w");
     fprintf(fd, "size,elapsed_time\n");
 
     // itera da min_size a max_size con passo step
