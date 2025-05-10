@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_LEN 100
+#define MAX_LEN 101
 
 /**
  * Funzione che elimina o inserisce lettere in modo intelligente:
@@ -31,6 +31,8 @@ size_t intelligent_delete_or_insert(const char *str1, char *str2)
                 {
                     k++;
                 }
+
+                printf("\t%d %zu %zu", k, i, j);
 
                 if (k >= 2 && i != j)
                 {
