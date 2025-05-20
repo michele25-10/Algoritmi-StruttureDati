@@ -17,13 +17,13 @@
  */
 
 #define MAX_NODES 1000000
-#define INF INT_MAX
+#define INF LLONG_MAX
 
 // GRAPH
 typedef struct Node
 {
     int dest;
-    int weight;
+    long long weight;
     struct Node *next;
 } Node;
 
@@ -37,7 +37,7 @@ typedef struct
 typedef struct
 {
     int dest;
-    int weight;
+    long long weight;
 } MinHeapNode;
 
 typedef struct
@@ -64,7 +64,7 @@ MinHeap *createMinHeap(int capacity)
 /**
  * Aggiunge un nodo alla minHeap
  */
-MinHeapNode *newMinHeapNode(int dest, int weight)
+MinHeapNode *newMinHeapNode(int dest, long long weight)
 {
     MinHeapNode *node = (MinHeapNode *)malloc(sizeof(MinHeapNode));
     node->dest = dest;
@@ -156,7 +156,7 @@ MinHeapNode *extractMin(MinHeap *heap)
 /**
  * Decrementare la distanza di un nodo
  */
-void decreaseKey(MinHeap *heap, int dest, int weight)
+void decreaseKey(MinHeap *heap, int dest, long long weight)
 {
     // prendo la posizione della mia key
     int i = heap->pos[dest];
@@ -188,7 +188,7 @@ int isInMinHeap(MinHeap *heap, int dest)
 /**
  * Aggiunge un arco al grafo
  */
-void add_edge(Graph *g, int u, int dest, int w)
+void add_edge(Graph *g, int u, int dest, long long w)
 {
     // Se la coppia è già presente come collegamento allora la ignoro
     Node *curr = g->adj[u];
@@ -218,10 +218,9 @@ void add_edge(Graph *g, int u, int dest, int w)
  *  Algoritmo di Dijkstra per il calcolo del cammino
  *  di costo minimo dalla sorgente s a tutte le altre destinazione
  */
-void dijkstra(Graph *graph, int src, int dist[])
+void dijkstra(Graph *graph, int src, long long dist[])
 {
     int V = graph->num_nodes;
-
     MinHeap *heap = createMinHeap(V);
 
     for (int v = 0; v < V; ++v)
@@ -231,9 +230,9 @@ void dijkstra(Graph *graph, int src, int dist[])
         heap->pos[v] = v;
     }
 
+    dist[src] = 0;
     heap->array[src] = newMinHeapNode(src, 0);
     heap->pos[src] = src;
-    dist[src] = 0;
     heap->size = V;
     decreaseKey(heap, src, dist[src]);
 
@@ -248,7 +247,7 @@ void dijkstra(Graph *graph, int src, int dist[])
             int v = curr->dest;
 
             if (isInMinHeap(heap, v) && dist[u] != INF &&
-                curr->weight + dist[u] < dist[v])
+                dist[u] + curr->weight < dist[v])
             {
                 dist[v] = dist[u] + curr->weight;
                 decreaseKey(heap, v, dist[v]);
@@ -263,23 +262,8 @@ void dijkstra(Graph *graph, int src, int dist[])
         if (dist[i] == INF)
             printf("Distanza da %d a %d: INF\n", src, i);
         else
-            printf("Distanza da %d a %d: %d\n", src, i, dist[i]);
+            printf("Distanza da %d a %d: %lld\n", src, i, dist[i]);
     }
-}
-
-int count_when_mulinello_is_worst(int *dist, int *mulinelli, int n)
-{
-    printf("\n\nCONTROLLO MULINNELLI: \n");
-    int count = 0;
-    for (int i = 1; i < n; i++)
-    {
-        // Se il mulinello esiste e (se passare per il mulinello è sconveniente oppure se non esiste un collegamento diretto con il nodo i)
-        if (mulinelli[i] != INF && (mulinelli[i] >= dist[i] || dist[i] == INF))
-            printf("mulinelli[i]: %d >= DIST[i]: %d;\n", mulinelli[i], dist[i]), // DEBUG
-                count++;                                                         // Aumento il conteggio
-    }
-
-    return count;
 }
 
 int main()
@@ -295,8 +279,10 @@ int main()
     Graph g;
     int i;
     int n, m, k;
-    int u, v, w;
-    int s, y;
+    int u, v;
+    long long w;
+    int s;
+    long long y;
 
     // Lettura del numero di N nodi e M archi e K mulinelli
     if (fscanf(in_file, "%d %d %d", &n, &m, &k) != 3)
@@ -307,63 +293,75 @@ int main()
     }
 
     g.num_nodes = n;
-    int mulinelli[n]; // costo del mulinello da sorgente a i-esima posizione
-    int dist[n];      // costo minimo per andare da sorgente a i-esima posizione senza usare un mulinello
 
-    // costo per raggiungere se stessi è 0
-    dist[0] = mulinelli[0] = 0;
+    // Prima di costruire il grafo mi assicuro che la lista di adiacenza sia tutta null
+    for (int i = 0; i < g.num_nodes; i++)
+    {
+        g.adj[i] = NULL;
+    }
 
-    // All'inizializzazione non esiste nessun mulinello e nessuna dist calcolata
-    for (i = 1; i < n; i++)
-        mulinelli[i] = dist[i] = INF;
+    // costo minimo per andare da sorgente a i-esima posizione senza usare un mulinello
+    long long *dist = malloc(n * sizeof(long long));
+    if (dist == NULL)
+    {
+        fprintf(stderr, "Errore allocazione memoria per dist\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Lettura degli archi e popolo il grafo
     for (i = 0; i < m; i++)
     {
         // Lettura archi
-        if (fscanf(in_file, "%d %d %d", &u, &v, &w) != 3)
+        if (fscanf(in_file, "%d %d %lld", &u, &v, &w) != 3)
         {
             fprintf(stderr, "Errore lettura arco: %d\n", i);
             fclose(in_file);
+            free(dist);
             exit(EXIT_FAILURE);
         }
 
         add_edge(&g, u, v, w);
     }
 
-    // Lettura dei mulinelli e dei loro costi
-    for (i = 0; i < k; i++)
-    {
-        if (fscanf(in_file, "%d %d", &s, &y) != 2)
-        {
-            fprintf(stderr, "Errore lettura mulinello: %d", 1);
-            fclose(in_file);
-            exit(EXIT_FAILURE);
-        }
-
-        mulinelli[s] = y;
-    }
-
     // Eseguo l'algoritmo di dijkstra che mi popolerà i costi all'interno di dist
     dijkstra(&g, 0, dist);
 
-    // Conto il numero di volte in cui i mulinelli sono la scelta peggiore
-    int result = count_when_mulinello_is_worst(dist, mulinelli, n);
+    int count = 0;
+    printf("\n\nCONTROLLO MULINNELLI: \n");
+    // Lettura dei mulinelli e dei loro costi
+    for (i = 0; i < k; i++)
+    {
+        if (fscanf(in_file, "%d %lld", &s, &y) != 2)
+        {
+            fprintf(stderr, "Errore lettura mulinello: %d", 1);
+            fclose(in_file);
+            free(dist);
+            exit(EXIT_FAILURE);
+        }
+
+        printf("mulinelli[%d]: %lld >= DIST[%d]: %lld\t\t%d\n", s, y, s, dist[s], (dist[s] != INF && dist[s] <= y));
+
+        // count++ ogni volta che è sconveniente prendere un mulinello
+        if (dist[s] != INF && y >= dist[s])
+            count++;
+    }
 
     // Apro file di output
     FILE *out_file = fopen("output.txt", "w");
     if (out_file == NULL)
     {
         printf("ERRORE APERTURA FILE");
+        free(dist);
         exit(EXIT_FAILURE);
     }
 
-    fprintf(out_file, "%d", result);
+    fprintf(out_file, "%d", count);
 
     // Chiudo file di input
     if (fclose(in_file) != 0 || fclose(out_file) != 0)
     {
         printf("Errore durante la chiusura del file di input");
+        free(dist);
         exit(EXIT_FAILURE);
     }
 

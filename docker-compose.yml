@@ -5,7 +5,7 @@ services:
     image: gcc:latest # Usa l'immagine ufficiale di GCC
     container_name: gcc_container
     volumes:
-      - ./workspace: /workspace # Monta la tua cartella locale "file" come volume
+      - ./workspace:/workspace
     working_dir: /workspace # Imposta la directory di lavoro
     stdin_open: true # Mantiene lo stdin aperto per interazione
     tty: true # Abilita un terminale interattivo
